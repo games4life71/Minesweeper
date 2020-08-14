@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -17,11 +17,21 @@ namespace MineSweeper
             InitializeComponent();
         }
 
-        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        private static int NumberOfMines; 
+
+        private void SetGameDifficulty()
         {
+            NumberOfMines = meniu.Difficulty;
 
         }
 
+        private static void HideMap(TableLayoutPanel panel )
+        {
+
+
+
+        }
+        
         private  static int CheckFreeSpaces(TableLayoutPanel panel , int col , int row)
         {
 
@@ -68,11 +78,11 @@ namespace MineSweeper
              
             }
 
-        }        
+        }           
         
       private void Form1_Load(object sender, EventArgs e)
         {
-
+            
 
             //dynamically adding buttons 
             for (int i = 0; i < panel.RowCount; i++)
@@ -90,17 +100,63 @@ namespace MineSweeper
 
                     //generating mines randomly  and setting button's tag to mine 
 
-                    Random rnd = new Random();
-
-                    if (rnd.Next(0, 100) < 50 && rnd.Next(1, 10) > 7)
-                    {
-                        button.BackgroundImage = Properties.Resources.bomb;
-                        button.BackgroundImageLayout = ImageLayout.Stretch;
-                        button.Tag = "mine";
-                    }
-                    else button.Tag = "clear";
-
                 }
+            Console.WriteLine(NumberOfMines);
+            SetGameDifficulty();
+            ClearMap(panel);
+            GenerateMap(panel);
+        }
+
+        private static void ClearMap(TableLayoutPanel panel)
+        {
+
+            for(int i =  0; i<panel.RowCount;i++)
+            {
+
+                for(int j = 0; j<panel.ColumnCount;j++)
+                {
+                    Button btn = (Button)panel.GetControlFromPosition(j, i);
+                    btn.BackgroundImage = null;
+                    btn.Tag = "clear";
+                }
+
+
+            }
+
+
+
+        }
+        /// <summary>
+        /// A function that randomly generates a Minesweeper map 
+        /// </summary>
+        /// <param name="panel"></param>
+        private  void GenerateMap(TableLayoutPanel panel)
+        {
+            ClearMap(panel);
+            int numMines = NumberOfMines;
+             while(numMines>0 )
+            {
+            bool isPlaced = false; 
+                Random rnd = new Random();
+                do
+                {
+                    int rnd_x = rnd.Next(0, 20);
+                    int rnd_y = rnd.Next(0, 20);
+                    Button btn =(Button)panel.GetControlFromPosition(rnd_y, rnd_x); 
+                    if (btn.Tag == "clear")
+                    {
+                        Console.WriteLine("ASAS");
+                        btn.BackgroundImage = Properties.Resources.bomb;
+                        btn.BackgroundImageLayout = ImageLayout.Stretch;
+                       
+                        btn.Tag = "mine";
+                        isPlaced = true;
+                    }
+                }
+                while (isPlaced == false);
+                numMines--;
+            }
+
 
         }
 
@@ -119,7 +175,10 @@ namespace MineSweeper
                     if (btn.Tag == "mine")
                     {
                         //game is lost 
-                         //uncover all the mines 
+                        //uncover all the mines 
+                        MessageBox.Show("You have lost the game",  "Lost the game", MessageBoxButtons.OK, MessageBoxIcon.Information); 
+                        //restart the game and generate the map again 
+
 
                     }
 
@@ -141,7 +200,10 @@ namespace MineSweeper
 
 
         }
-        
-       
-      } 
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            GenerateMap(panel); 
+        }
+    } 
     }
