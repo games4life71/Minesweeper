@@ -16,7 +16,7 @@ namespace MineSweeper
         {
             InitializeComponent();
         }
-
+        private static List<object> mines = new List<object>();
         private static int NumberOfMines; 
 
         private void SetGameDifficulty()
@@ -32,18 +32,26 @@ namespace MineSweeper
 
         }
         
-        private  static int CheckFreeSpaces(TableLayoutPanel panel , int col , int row)
+        private  static int CountFreeSpaces(TableLayoutPanel panel , int col , int row)
         {
+                //count  all the free spaces on every direction 
 
             int[] y_pos = { -1, -1, -1, 0, 0, 1, 1, 1};
             int[] x_pos = { -1, 0, 1, -1, 1, -1, 0, 1 };
             int freeSpaces = 0;
-            
-            for (int i = 0; i<8;i++)
+
+            for (int i = 0; i < 8; i++)
             {
-                if (panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]).Tag == "clear") freeSpaces++;
-                //count  all the free spaces 
                 
+                //check all the neighbours 
+
+               if(x_pos[i]+col >= 0 && y_pos[i]+row>=0 && x_pos[i] + col <=19 && y_pos[i] + row<=19 )
+                {
+                    if (panel.GetControlFromPosition(x_pos[i] + col, y_pos[i] + row).Tag == "clear") freeSpaces++;
+                        //Console.WriteLine("u pressed on column {0} , and row {1} ", col+x_pos[i], row+y_pos[i]);
+                }
+
+
             }
             return freeSpaces;
         }
@@ -51,7 +59,7 @@ namespace MineSweeper
         private static void ShowFreeSpaces(TableLayoutPanel panel, int col, int row)
         {
 
-            //add to queue all the neighbours recursively and show them 
+             
             Queue<Button> q = new Queue<Button>();
             panel.GetControlFromPosition(col, row).Tag = "clearSHOW";
             q.Enqueue((Button)panel.GetControlFromPosition(col, row));
@@ -67,11 +75,15 @@ namespace MineSweeper
 
                 for (int i = 0; i < 8; i++)
                 {
-                    if(panel.GetControlFromPosition(col+x_pos[i], row+y_pos[i]).Tag == "clear")
+                    if (x_pos[i] + col >= 0 && y_pos[i] + row >= 0 && x_pos[i] + col <= 19 && y_pos[i] + row <= 19)
                     {
-                        q.Enqueue((Button)panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]));
-                        panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]).Tag = "clearSHOW";
+                        if (panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]).Tag == "clear" && CountFreeSpaces(panel, col + x_pos[i], row + y_pos[i]) == 8)
+                        {
+                            Console.WriteLine(col + x_pos[i] + "pozitie");
+                            q.Enqueue((Button)panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]));
+                            panel.GetControlFromPosition(col + x_pos[i], row + y_pos[i]).Tag = "clearSHOW";
 
+                        }
                     }
                 }
                
@@ -101,7 +113,7 @@ namespace MineSweeper
                     //generating mines randomly  and setting button's tag to mine 
 
                 }
-            Console.WriteLine(NumberOfMines);
+           
             SetGameDifficulty();
             ClearMap(panel);
             GenerateMap(panel);
@@ -134,6 +146,7 @@ namespace MineSweeper
         {
             ClearMap(panel);
             int numMines = NumberOfMines;
+            int i = 0;
              while(numMines>0 )
             {
             bool isPlaced = false; 
@@ -144,13 +157,12 @@ namespace MineSweeper
                     int rnd_y = rnd.Next(0, 20);
                     Button btn =(Button)panel.GetControlFromPosition(rnd_y, rnd_x); 
                     if (btn.Tag == "clear")
-                    {
-                        Console.WriteLine("ASAS");
-                        btn.BackgroundImage = Properties.Resources.bomb;
+                    {                      
+                       btn.BackgroundImage = Properties.Resources.bomb;
                         btn.BackgroundImageLayout = ImageLayout.Stretch;
-                       
                         btn.Tag = "mine";
                         isPlaced = true;
+                        mines.Add(btn);
                     }
                 }
                 while (isPlaced == false);
@@ -158,6 +170,17 @@ namespace MineSweeper
             }
 
 
+        }
+        private static void ShowMines(TableLayoutPanel panel )
+        {
+
+            foreach (Button btn  in mines)
+            {
+
+                btn.BackgroundImage = Properties.Resources.bomb;
+                
+            }
+            mines.Clear();
         }
 
         private void mouse_click (object sender  ,MouseEventArgs e )
@@ -167,28 +190,39 @@ namespace MineSweeper
             {
                 if (e.Button == MouseButtons.Left)
                 {
-
+                    //LEFT CLICK 
                     // mine this spot 
-                    Console.WriteLine("left");
+                  
                     
                     Button btn = (Button)sender;
                     if (btn.Tag == "mine")
                     {
                         //game is lost 
                         //uncover all the mines 
+                        ShowMines(panel);
                         MessageBox.Show("You have lost the game",  "Lost the game", MessageBoxButtons.OK, MessageBoxIcon.Information); 
-                        //restart the game and generate the map again 
+                       
+                    }
+                    else
+                    {
 
+                        // unconver all the empty spaces 
+                        int col = panel.GetPositionFromControl(btn).Column;
+                        int row = panel.GetPositionFromControl(btn).Row;
+                        //Console.WriteLine("u pressed on column {0} , and row {1} " , col,row);
+                        ShowFreeSpaces(panel, col, row); 
+                        Console.WriteLine(CountFreeSpaces(panel ,col , row ));
 
+                        
                     }
 
 
                 }
 
                 else if (e.Button == MouseButtons.Right)
-                {
+                {     //RIGHT CLICK 
                     //flag the spot 
-                    Console.WriteLine("right")  ;
+                   
                     Button btn = (Button)sender;
                     btn.BackgroundImage = Properties.Resources.flag;
                     btn.BackgroundImageLayout = ImageLayout.Stretch;
@@ -204,6 +238,40 @@ namespace MineSweeper
         private void button1_Click(object sender, EventArgs e)
         {
             GenerateMap(panel); 
+        }
+
+        private void restartGameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void generateMapToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GenerateMap(panel);
+        }
+
+        private void mainMenuToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(MessageBox.Show("Are you sure you want to quit ?" , "Main menu" , MessageBoxButtons.YesNo , MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+
+                var form = new meniu();
+                this.Hide();
+                form.Show();
+
+            }
+        }
+
+        private void restartGameToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            ShowMines(panel);
+             
+              if ( MessageBox.Show("Are you sure you want to restart ?", " Restart game ", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes )
+                {
+                //restart the game 
+                ClearMap(panel);
+                GenerateMap(panel);
+               }
         }
     } 
     }
