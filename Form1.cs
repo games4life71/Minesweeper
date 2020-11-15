@@ -13,6 +13,9 @@ namespace MineSweeper
         {
             InitializeComponent();
             SetGameDifficulty();
+            timer1.Interval = 1000;
+            timer1.Start();
+
         }
         private static List<object> mines = new List<object>();
         private static List<object> flags = new List<object>();
@@ -23,12 +26,17 @@ namespace MineSweeper
         private static int MapSize;
         private static int panelCoord;
         private static int NumberOfFlags;
+        private static float  Points = 0;
+        private static float secPoints = 0;
+        private static int NoOfBlocks;
+
         private void SetGameDifficulty()
         {
             NumberOfMines = meniu.Difficulty;
             MapSize = 20 - (MapOffset * 2);
             panelCoord = MapOffset + MapSize;
-            Console.WriteLine("grid size is " + panelCoord);
+            NoOfBlocks = MapSize * MapSize - NumberOfMines;
+            Console.WriteLine("there are " + MapOffset);
 
         }
         private static Color SetDigitColor(int digit)
@@ -49,7 +57,30 @@ namespace MineSweeper
 
 
         }
+        private static float  SetPoints (int GameDifficulty )
+        {
+            
 
+         switch(GameDifficulty)
+            {
+                case 10:
+
+                    return GameDifficulty / 10; 
+
+                case 25:
+                    return GameDifficulty / 10;
+
+                case 35:
+                    return GameDifficulty / 10;
+
+
+
+                default: return 10;
+            }
+             
+
+            
+        }
 
         private static int CountFreeSpaces(TableLayoutPanel panel, int col, int row)
         {
@@ -77,16 +108,31 @@ namespace MineSweeper
 
         }
 
-
-        private static void UncoverCells(TableLayoutPanel panel, int col, int row)
+        private static bool CheckWin(TableLayoutPanel panel)
         {
+             for(int i = MapOffset; i<MapSize+MapOffset;i++)
+                for(int j = MapOffset; j<MapOffset+MapSize;j++)
+                {
 
+                    Button btn = (Button)panel.GetControlFromPosition(j, i);
+                    Console.WriteLine(btn.Tag);
+                    if (btn.Tag == "clear") return false;
+
+
+                }
+
+            return true;
+
+        }
+        private void UncoverCells(TableLayoutPanel panel, int col, int row)
+        {
+                 
             //////Button btn = (Button)panel.GetControlFromPosition(col, row);
             //base cases
             int gridSize = MapOffset + MapSize;
             if (col > panelCoord - 1 || row > panelCoord - 1 || col < MapOffset || row < MapOffset) return;
 
-
+            
             if (panel.GetControlFromPosition(col, row).Tag == "clearShow")
             {
                 return;
@@ -99,9 +145,12 @@ namespace MineSweeper
 
             if (CheckBombs(panel, col, row) > 0)
             {
+                Points += 1;
+               
                 panel.GetControlFromPosition(col, row).Text = CheckBombs(panel, col, row).ToString();
                 panel.GetControlFromPosition(col, row).ForeColor = SetDigitColor(CheckBombs(panel, col, row));
                 panel.GetControlFromPosition(col, row).Font = new Font("Bold", 12);
+                panel.GetControlFromPosition(col, row).Tag = "clearShow";
                 if (col == panelCoord || row == panelCoord || col == MapOffset || row == MapOffset)
                 {
                     // panel.GetControlFromPosition(col, row).Text = CheckBombs(panel, col, row).ToString();
@@ -118,11 +167,12 @@ namespace MineSweeper
             }
 
             // panel.GetControlFromPosition(col, row).Text = "..";
+            panel.GetControlFromPosition(col, row).BackgroundImage = null;
+            Points += SetPoints(NumberOfMines);
+            lblPoints.Text = Points.ToString();
             panel.GetControlFromPosition(col, row).Enabled = false;
             panel.GetControlFromPosition(col, row).Tag = "clearShow";
-
-
-
+          
             UncoverCells(panel, col, row - 1);
             UncoverCells(panel, col - 1, row);
             UncoverCells(panel, col + 1, row);
@@ -135,9 +185,12 @@ namespace MineSweeper
 
         }
 
-        private static void ClearMap(TableLayoutPanel panel)
+        private  void ClearMap(TableLayoutPanel panel)
         {
-
+            NumberOfFlags = 0;
+              label7.Text = NumberOfMines.ToString();
+            label5.Text = NumberOfMines.ToString();
+            
             for (int i = MapOffset; i < panelCoord; i++)
             {
 
@@ -254,6 +307,24 @@ namespace MineSweeper
                         //Console.WriteLine("u pressed on column {0} , and row {1} " , col,row);
                         UncoverCells(panel, col, row);
 
+                        if (CheckWin(panel))
+                        {
+                            if(MessageBox.Show("You have win the game!" ,"Winner", MessageBoxButtons.OK, MessageBoxIcon.Exclamation) == DialogResult.OK)
+                            {
+
+                                ShowMines(panel);
+                                if(MessageBox.Show("Do you wish to play again ?" , "Play again ", MessageBoxButtons.YesNo ,MessageBoxIcon.Question) == DialogResult.Yes)
+                                {
+                                    ClearMap(panel);
+                                    GenerateMap(panel);
+
+                                }
+
+                            }
+
+
+                        }
+
                         int clearShow = 0;
                         //Console.WriteLine(CountFreeSpaces(panel, col, row));
 
@@ -363,8 +434,8 @@ namespace MineSweeper
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-            label5.Text = NumberOfMines.ToString();
             label7.Text = NumberOfMines.ToString();
+            label5.Text = NumberOfMines.ToString();
             Console.WriteLine("number of diff is {0}", MapSize);
 
             //dynamically adding buttons 
@@ -379,22 +450,34 @@ namespace MineSweeper
                     button.MouseUp += mouse_click;
                     panel.Controls.Add(button, j, i);
                     button.Text = panel.GetPositionFromControl(button).Row.ToString();
+                    button.Tag = "clear";
                     //panel.RowCount = MapSize;
                     //panel.ColumnCount = MapSize;
 
                     // button.Click += EVENT    
 
                     //generating mines randomly  and setting button's tag to mine 
-                    label1.Text = 100.ToString();
+                    lblTimeMin.Text = 100.ToString();
                 }
 
             ClearMap(panel);
             GenerateMap(panel);
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            label1.Text = (100000 - timer1.Interval).ToString();
+       private void timer1_Tick(object sender, EventArgs e)
+          {
+        //    secPoints += 1;
+        //    int minutes = 0; 
+        //    Console.WriteLine(secPoints+ "  ");
+        //    if (lblPoints.Text == "60")
+        //    {
+        //        minutes++;
+        //        lblTimeMin = minutes.ToString();
+        //        lblTimeSec = 
+
+
+
+        //    }
         }
 
         private void toolStripMenuItem2_Click(object sender, EventArgs e)
